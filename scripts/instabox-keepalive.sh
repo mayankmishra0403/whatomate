@@ -12,10 +12,10 @@
 # A manual pause ends the run with no cooldown owed, and the next resume
 # starts a fresh 2-hour window. This script reads the current deadline
 # (maxRunMinutes, measured from runStartedAt) and does a quick pause + resume
-# four minutes before it, after Instabox has made the extension decision.
-# Downtime is usually 10-30 seconds. Run it every 5 minutes from OUTSIDE the
-# machine (GitHub Actions or another always-on host) because the machine
-# cannot act while paused.
+# when five minutes or less remain, after Instabox has made the extension
+# decision. Downtime is usually 30-60 seconds. Run it every 5 minutes from
+# OUTSIDE the machine (GitHub Actions or another always-on host) because the
+# machine cannot act while paused.
 #
 # Usage:
 #   INSTABOX_API_KEY=ibk_... ./scripts/instabox-keepalive.sh [--dry-run] [--force]
@@ -25,7 +25,7 @@
 #   INSTABOX_MACHINE_ID       default: m_agqwaleqeg6hzdoppoerxokgwa (production).
 #   PUBLIC_READY_URL          default: https://whatsapp.oppertunity.xyz/ready
 #   RESET_AFTER_MINUTES       default: 360 (also reset after 6 h of a run).
-#   SAFETY_MARGIN_MINUTES     default: 4 (reset this close to the deadline; the
+#   SAFETY_MARGIN_MINUTES     default: 5 (reset this close to the deadline; the
 #                             extension decision happens 5 minutes before it).
 #   MIN_AGE_BEFORE_RESET      default: 60 (never reset a run younger than this).
 #   READY_TIMEOUT_SECONDS     default: 300 (how long to wait for /ready after resume).
@@ -44,7 +44,7 @@ API_KEY="${INSTABOX_API_KEY:-}"
 MACHINE_ID="${INSTABOX_MACHINE_ID:-m_agqwaleqeg6hzdoppoerxokgwa}"
 PUBLIC_READY_URL="${PUBLIC_READY_URL:-https://whatsapp.oppertunity.xyz/ready}"
 RESET_AFTER_MINUTES="${RESET_AFTER_MINUTES:-360}"
-SAFETY_MARGIN_MINUTES="${SAFETY_MARGIN_MINUTES:-4}"
+SAFETY_MARGIN_MINUTES="${SAFETY_MARGIN_MINUTES:-5}"
 MIN_AGE_BEFORE_RESET="${MIN_AGE_BEFORE_RESET:-60}"
 READY_TIMEOUT_SECONDS="${READY_TIMEOUT_SECONDS:-300}"
 OP_TIMEOUT_SECONDS="${OP_TIMEOUT_SECONDS:-180}"

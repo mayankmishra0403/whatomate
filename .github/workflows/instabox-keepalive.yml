@@ -19,11 +19,13 @@ name: Instabox keepalive
 
 on:
   schedule:
-    # Every 5 minutes. The free plan's run window can be as short as 2 hours,
-    # and the extension decision happens 5 minutes before the deadline, so a
-    # sparse schedule can miss the safe reset window. The script is a no-op
-    # unless the run is within 4 minutes of its deadline or older than 6 hours.
+    # Every 5 minutes, at two offsets. The free plan's run window can be as
+    # short as 2 hours, and the extension decision happens 5 minutes before
+    # the deadline, so a sparse schedule can miss the safe reset window. The
+    # second offset halves the worst-case gap. The script is a no-op unless
+    # the run is within 5 minutes of its deadline or older than 6 hours.
     - cron: "*/5 * * * *"
+    - cron: "2-59/5 * * * *"
   workflow_dispatch:
     inputs:
       force:
@@ -59,7 +61,7 @@ jobs:
           FORCE: ${{ github.event.inputs.force == 'true' && '1' || '0' }}
           DRY_RUN: ${{ github.event.inputs.dry_run == 'true' && '1' || '0' }}
           RESET_AFTER_MINUTES: "360"
-          SAFETY_MARGIN_MINUTES: "4"
+          SAFETY_MARGIN_MINUTES: "5"
           MIN_AGE_BEFORE_RESET: "60"
           READY_TIMEOUT_SECONDS: "300"
           OP_TIMEOUT_SECONDS: "180"
