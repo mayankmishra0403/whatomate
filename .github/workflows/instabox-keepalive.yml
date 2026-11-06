@@ -1,0 +1,66 @@
+name: Instabox keepalive
+
+# Instabox free machines start each run with a 2-hour window. Activity can
+# extend it by 2 hours at a time, up to 8 hours. A max-run pause triggers a
+# cooldown (5-20 min, then 60-75, then 120-135 for back-to-back pauses). This
+# workflow runs outside the machine and does a quick pause/resume before the
+# deadline, which starts a fresh run with no cooldown owed. See
+# agency/INSTABOX_KEEPALIVE.md for setup and limitations.
+#
+# Required repository secret:
+#   INSTABOX_API_KEY  (Instabox API key with machines:read + machines:write)
+#
+# Optional repository variables:
+#   INSTABOX_MACHINE_ID  (defaults to the production machine)
+#   PUBLIC_READY_URL     (defaults to the production /ready URL)
+#
+# Optional repository secret:
+#   ALERT_WEBHOOK_URL    (Slack/Discord-style webhook for failures)
+
+on:
+  schedule:
+    # Every 5 minutes. The free plan's run window can be as short as 2 hours,
+    # and the extension decision happens 5 minutes before the deadline, so a
+    # sparse schedule can miss the safe reset window. The script is a no-op
+    # unless the run is within 4 minutes of its deadline or older than 6 hours.
+    - cron: "*/5 * * * *"
+  workflow_dispatch:
+    inputs:
+      force:
+        description: "Force a pause/resume reset now"
+        type: boolean
+        default: false
+      dry_run:
+        description: "Show what would happen without changing anything"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: instabox-keepalive
+  cancel-in-progress: false
+
+jobs:
+  keepalive:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Reset the Instabox run window if needed
+        env:
+          INSTABOX_API_KEY: ${{ secrets.INSTABOX_API_KEY }}
+          INSTABOX_MACHINE_ID: ${{ vars.INSTABOX_MACHINE_ID || 'm_agqwaleqeg6hzdoppoerxokgwa' }}
+          PUBLIC_READY_URL: ${{ vars.PUBLIC_READY_URL || 'https://whatsapp.oppertunity.xyz/ready' }}
+          ALERT_WEBHOOK_URL: ${{ secrets.ALERT_WEBHOOK_URL }}
+          FORCE: ${{ github.event.inputs.force == 'true' && '1' || '0' }}
+          DRY_RUN: ${{ github.event.inputs.dry_run == 'true' && '1' || '0' }}
+          RESET_AFTER_MINUTES: "360"
+          SAFETY_MARGIN_MINUTES: "4"
+          MIN_AGE_BEFORE_RESET: "60"
+          READY_TIMEOUT_SECONDS: "300"
+          OP_TIMEOUT_SECONDS: "180"
+        run: bash ./scripts/instabox-keepalive.sh
