@@ -1,11 +1,11 @@
 name: Instabox keepalive
 
-# Instabox free machines start each run with a 2-hour window. Activity can
-# extend it by 2 hours at a time, up to 8 hours. A max-run pause triggers a
-# cooldown (5-20 min, then 60-75, then 120-135 for back-to-back pauses). This
-# workflow runs outside the machine and does a quick pause/resume before the
-# deadline, which starts a fresh run with no cooldown owed. See
-# agency/INSTABOX_KEEPALIVE.md for setup and limitations.
+# Manual fallback for the Instabox free-plan keepalive.
+#
+# Primary automation lives in workers/instabox-keepalive.js: a Cloudflare
+# Worker cron runs every minute and does the pause/resume reset before the
+# deadline. This workflow is kept for manual recovery and dry-runs only. It has
+# no schedule, so it cannot race the Worker. See agency/INSTABOX_KEEPALIVE.md.
 #
 # Required repository secret:
 #   INSTABOX_API_KEY  (Instabox API key with machines:read + machines:write)
@@ -18,14 +18,6 @@ name: Instabox keepalive
 #   ALERT_WEBHOOK_URL    (Slack/Discord-style webhook for failures)
 
 on:
-  schedule:
-    # Every 5 minutes, at two offsets. The free plan's run window can be as
-    # short as 2 hours, and the extension decision happens 5 minutes before
-    # the deadline, so a sparse schedule can miss the safe reset window. The
-    # second offset halves the worst-case gap. The script is a no-op unless
-    # the run is within 5 minutes of its deadline or older than 6 hours.
-    - cron: "*/5 * * * *"
-    - cron: "2-59/5 * * * *"
   workflow_dispatch:
     inputs:
       force:
